@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
@@ -15,12 +14,11 @@ import com.example.guests.R
 import com.example.guests.service.constants.GuestConstants
 import com.example.guests.view.adapter.GuestAdapter
 import com.example.guests.view.listener.GuestListener
-import com.example.guests.viewmodel.AllGuestsViewModel
-import kotlinx.android.synthetic.main.fragment_all.*
+import com.example.guests.viewmodel.GuestsViewModel
 
 class AllGuestsFragment : Fragment() {
 
-    private lateinit var allGuestsViewModel: AllGuestsViewModel
+    private lateinit var guestsViewModel: GuestsViewModel
     private val mAdapter: GuestAdapter = GuestAdapter()
     private lateinit var mListener: GuestListener
 
@@ -29,7 +27,7 @@ class AllGuestsFragment : Fragment() {
             container: ViewGroup?,
             savedInstanceState: Bundle?
     ): View? {
-        allGuestsViewModel = ViewModelProvider(this).get(AllGuestsViewModel::class.java)
+        guestsViewModel = ViewModelProvider(this).get(GuestsViewModel::class.java)
         val root = inflater.inflate(R.layout.fragment_all, container, false)
 
         val recycler = root.findViewById<RecyclerView>(R.id.all_guests_view)
@@ -46,7 +44,8 @@ class AllGuestsFragment : Fragment() {
             }
 
             override fun onDelete(id: Int) {
-                allGuestsViewModel.delete(id)
+                guestsViewModel.delete(id)
+                guestsViewModel.load(GuestConstants.FILTER.EMPTY)
             }
 
         }
@@ -59,12 +58,12 @@ class AllGuestsFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        allGuestsViewModel.load()
+        guestsViewModel.load(GuestConstants.FILTER.EMPTY)
     }
 
     private fun observer() {
         //viewLifecycleOwner has the same role for fragments as Context has for Activities
-        allGuestsViewModel.guestList.observe(viewLifecycleOwner, Observer {
+        guestsViewModel.guestList.observe(viewLifecycleOwner, Observer {
             mAdapter.updateGuests(it)
         })
     }
