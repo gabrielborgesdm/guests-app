@@ -1,5 +1,6 @@
 package com.example.guests.view
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,7 +12,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.guests.R
+import com.example.guests.service.constants.GuestConstants
 import com.example.guests.view.adapter.GuestAdapter
+import com.example.guests.view.listener.GuestListener
 import com.example.guests.viewmodel.AllGuestsViewModel
 import kotlinx.android.synthetic.main.fragment_all.*
 
@@ -19,6 +22,7 @@ class AllGuestsFragment : Fragment() {
 
     private lateinit var allGuestsViewModel: AllGuestsViewModel
     private val mAdapter: GuestAdapter = GuestAdapter()
+    private lateinit var mListener: GuestListener
 
     override fun onCreateView(
             inflater: LayoutInflater,
@@ -32,11 +36,30 @@ class AllGuestsFragment : Fragment() {
         recycler.layoutManager = LinearLayoutManager(context)
         recycler.adapter = mAdapter
 
+        mListener = object : GuestListener {
+            override fun onEdit(id: Int) {
+                val intent = Intent(context, GuestFormActivity::class.java)
+                val bundle = Bundle()
+                bundle.putInt(GuestConstants.GUEST_ID, id)
+                intent.putExtras(bundle)
+                startActivity(intent)
+            }
+
+            override fun onDelete(id: Int) {
+                allGuestsViewModel.delete(id)
+            }
+
+        }
+
+        mAdapter.attachListener(mListener)
         observer()
 
-        allGuestsViewModel.load()
-
         return root
+    }
+
+    override fun onResume() {
+        super.onResume()
+        allGuestsViewModel.load()
     }
 
     private fun observer() {
