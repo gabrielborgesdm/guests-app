@@ -7,12 +7,14 @@ import android.widget.Toast
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.example.guests.R
+import com.example.guests.service.constants.GuestConstants
 import com.example.guests.viewmodel.GuestFormViewModel
 import kotlinx.android.synthetic.main.activity_guest_form.*
 
 class GuestFormActivity : AppCompatActivity(), View.OnClickListener {
 
     private lateinit var mViewModel: GuestFormViewModel
+    private var mGuestId = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,6 +24,17 @@ class GuestFormActivity : AppCompatActivity(), View.OnClickListener {
 
         setListeners()
         observe()
+        loadData()
+
+        radio_presence.isChecked = true
+    }
+
+    private fun loadData() {
+        val bundle = intent.extras
+        if(bundle != null){
+            mGuestId = bundle.getInt(GuestConstants.GUEST_ID)
+            mViewModel.load(mGuestId)
+        }
     }
 
     override fun onClick(v: View) {
@@ -29,16 +42,27 @@ class GuestFormActivity : AppCompatActivity(), View.OnClickListener {
         if(id == R.id.button_save){
             val name = edit_text_name.text.toString()
             val presence = radio_presence.isChecked
-            mViewModel.save(name, presence)
+            mViewModel.saveOrUpdate(mGuestId, name, presence)
+
         }
     }
 
     private fun observe() {
         mViewModel.saveGuest.observe(this, Observer {
             if(it){
-                Toast.makeText(applicationContext, "Sucesso", Toast.LENGTH_SHORT)
+                Toast.makeText(applicationContext, "Sucesso", Toast.LENGTH_SHORT).show()
+                finish()
             } else {
-                Toast.makeText(applicationContext, "Falha", Toast.LENGTH_SHORT)
+                Toast.makeText(applicationContext, "Falha", Toast.LENGTH_SHORT).show()
+            }
+        })
+
+        mViewModel.guest.observe(this, {
+            edit_text_name.setText(it.name)
+            if(it.presence){
+                radio_presence.isChecked = true
+            } else {
+                radio_absent.isChecked = true
             }
         })
     }

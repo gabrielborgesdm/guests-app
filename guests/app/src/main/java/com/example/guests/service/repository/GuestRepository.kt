@@ -37,11 +37,10 @@ class GuestRepository private constructor(context: Context) {
     fun get(id: Int): GuestModel? {
         var guest: GuestModel? = null
         return try {
-            val db = mGuestDatabaseHelper.writableDatabase
+            val db = mGuestDatabaseHelper.readableDatabase
 
             val projection = arrayOf(
                 DatabaseConstants.GUEST.COLUMNS.NAME,
-                DatabaseConstants.GUEST.COLUMNS.ID,
                 DatabaseConstants.GUEST.COLUMNS.PRESENCE
             )
 
@@ -58,6 +57,10 @@ class GuestRepository private constructor(context: Context) {
             )
             if (cursor != null && cursor.count > 0) {
                cursor.moveToFirst()
+                val presence = cursor.getInt(cursor.getColumnIndex(DatabaseConstants.GUEST.COLUMNS.PRESENCE)) == 1
+                val name = cursor.getString(cursor.getColumnIndex(DatabaseConstants.GUEST.COLUMNS.NAME))
+                guest = GuestModel(id, name, presence)
+                cursor.close()
             }
             guest
         } catch (e: Exception) {
@@ -65,19 +68,40 @@ class GuestRepository private constructor(context: Context) {
         }
     }
 
-    fun getAll(): List<GuestModel> {
+    private fun getMultiple(sql: String? = null): List<GuestModel> {
         val list: MutableList<GuestModel> = ArrayList()
-        return list
+        return try {
+            val db = mGuestDatabaseHelper.writableDatabase
+
+            val cursor = db.rawQuery(sql ?: "SELECT * FROM ${DatabaseConstants.GUEST.TABLE_NAME}", null)
+
+            if (cursor != null && cursor.count > 0) {
+                while (cursor.moveToNext()){
+                    val presence = cursor.getInt(cursor.getColumnIndex(DatabaseConstants.GUEST.COLUMNS.PRESENCE)) == 1
+                    val name = cursor.getString(cursor.getColumnIndex(DatabaseConstants.GUEST.COLUMNS.NAME))
+                    val id = cursor.getInt(cursor.getColumnIndex(DatabaseConstants.GUEST.COLUMNS.ID))
+                    val guest = GuestModel(id, name, presence)
+                    list.add(guest)
+                }
+                cursor.close()
+            }
+            list
+        } catch (e: Exception) {
+            list
+        }
+    }
+
+
+    fun getAll(): List<GuestModel> {
+        return getMultiple()
     }
 
     fun getPresent(): List<GuestModel> {
-        val list: MutableList<GuestModel> = ArrayList()
-        return list
+        return getMultiple("SELECT * FROM ${DatabaseConstants.GUEST.TABLE_NAME} WHERE ${DatabaseConstants.GUEST.COLUMNS.PRESENCE} = 1")
     }
 
     fun getAbsent(): List<GuestModel> {
-        val list: MutableList<GuestModel> = ArrayList()
-        return list
+        return getMultiple("SELECT * FROM ${DatabaseConstants.GUEST.TABLE_NAME} WHERE ${DatabaseConstants.GUEST.COLUMNS.PRESENCE} = 0")
     }
 
 
